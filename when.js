@@ -26,6 +26,7 @@ define(function () {
 
 	when.all       = all;       // Resolve a list of promises
 	when.map       = map;       // Array.map() for promises
+	when.mapUnfulfilled = mapUnfulfilled; // Array.map that retuns unfulfilled promises
 	when.reduce    = reduce;    // Array.reduce() for promises
 
 	when.any       = any;       // One-winner race
@@ -34,6 +35,7 @@ define(function () {
 	when.chain     = chain;     // Make a promise trigger another resolver
 
 	when.isPromise = isPromise; // Determine if a thing is a promise
+
 
 	/**
 	 * Register an observer for a promise or immediate value.
@@ -180,6 +182,65 @@ define(function () {
 	};
 
 	/**
+	 * works like all but allows you to throttle the concurrency
+	 *
+	 * @param {*} needs to be ran after mapUnfulfilled
+	 * @return {Promise} fulfilled promise
+	 */
+	function allLimit(concurrent, success, failed) {
+		var promises = this.promises,
+			deferred = when.defer(),
+			deferred2 = when.defer(),
+			errorObject,
+			index = 0,
+			completed = 0,
+			responses = new Array(promises.length);
+
+		function next () {
+			if (completed === promises.length) {
+				if (errorObject) {
+					deferred.reject(errorObject);
+				} else {
+					deferred.resolve();
+				}
+			} else {
+				var call = promises[index];
+				if (call) {
+					call().then((function (index) {
+						return function (data) {
+							responses[index] = data;
+							completed++;
+							next();
+						}
+					})(index), errorCatcher);
+					index++;
+				}
+			}
+		}
+
+		function errorCatcher (message) {
+			completed++;
+			errorObject = message;
+			next();
+		}
+
+		if (success || failed) deferred.promise.then(
+			function () {
+				success(responses);
+				deferred2.resolve();
+			},
+			function () {
+				failed(errorObject);
+				deferred2.reject(errorObject);
+			}
+		);
+
+		for (var i = 0; i < concurrent && i < promises.length; i++) next();
+
+		return deferred2.promise;
+	}
+
+	/**
 	 * Create an already-resolved promise for the supplied value
 	 * @private
 	 *
@@ -245,6 +306,7 @@ define(function () {
 		 * @name Deferred
 		 */
 		deferred = {
+			allLimit: allLimit,
 			then:     then, // DEPRECATED: use deferred.promise.then
 			resolve:  promiseResolve,
 			reject:   promiseReject,
@@ -564,6 +626,26 @@ define(function () {
 
 		});
 	}
+
+	/**
+	 * maps array to a unfulfilled promise
+	 *
+	 * @param {Array} items
+	 * @param {Function} method that returns a unfulfilled promise
+	 * @return {Array} unfulfilled promises
+	 */
+	function mapUnfulfilled (array, task) {
+		array = array.map(function (item) {
+			return function () {
+				return task(item);
+			}
+		});
+
+		return {
+			allLimit: allLimit.bind({promises: array})
+		};
+	}
+
 
 	/**
 	 * Traditional reduce function, similar to `Array.prototype.reduce()`, but
