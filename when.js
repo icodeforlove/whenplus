@@ -211,7 +211,7 @@ define(function () {
 							responses[index] = data;
 							completed++;
 							next();
-						}
+						};
 					})(index), errorCatcher);
 					index++;
 				}
@@ -235,7 +235,11 @@ define(function () {
 			}
 		);
 
-		for (var i = 0; i < concurrent && i < promises.length; i++) next();
+		if (promises.length) {
+			for (var i = 0; i < concurrent && i < promises.length; i++) next();
+		} else {
+			deferred.resolve();
+		}
 
 		return deferred2.promise;
 	}
