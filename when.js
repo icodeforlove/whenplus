@@ -129,6 +129,20 @@ define(function () {
 	}
 
 	Promise.prototype = {
+		reduce: function(reduce) {
+			var deferred = when.defer();
+
+			this.then(function (results) {
+				if (Array.isArray(results) && typeof reduce === 'function') {
+					deferred.resolve(results.reduce(reduce));
+				} else {
+					deferred.reject(new Error('issue with reducing ' + results + ' with ' + reduce));
+				}
+			});
+
+			return deferred.promise;
+		},
+
 		/**
 		 * Register a callback that will be called when a promise is
 		 * fulfilled or rejected.  Optionally also register a progress handler.
@@ -223,15 +237,21 @@ define(function () {
 			errorObject = message;
 			next();
 		}
-
-		if (success || failed) deferred.promise.then(
+		
+		deferred.promise.then(
 			function () {
-				success(responses);
-				deferred2.resolve();
+				if (success) {
+					success(responses);
+				} else {
+					deferred2.resolve(responses);
+				}
 			},
 			function () {
-				failed(errorObject);
-				deferred2.reject(errorObject);
+				if (success || failed) {
+					failed(responses);
+				} else {
+					deferred2.reject(errorObject);
+				}
 			}
 		);
 
