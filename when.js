@@ -377,6 +377,23 @@ define(function () {
 				: function(update) { deferred.progress(update); };
 
 			handlers.push(function(promise) {
+				if (Array.isArray(onFulfilled)) {
+					var args = onFulfilled,
+						func = args.shift();
+
+					onFulfilled = function (results) {
+						var deferred = defer();
+
+						args.push(results);
+
+						func.apply(func, args).then(function (results) {
+							deferred.resolve(results);
+						});
+						
+						return deferred.promise;
+					};
+				}
+
 				promise.then(onFulfilled, onRejected)
 					.then(deferred.resolve, deferred.reject, progressHandler);
 			});
