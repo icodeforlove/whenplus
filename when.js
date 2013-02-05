@@ -641,9 +641,17 @@ define(function () {
 			if(!toResolve) {
 				d.resolve(results);
 			} else {
-
 				resolve = function resolveOne(item, i) {
-					when(item, mapFunc).then(function(mapped) {
+					var params = [item],
+						func = mapFunc;
+
+					if (Array.isArray(mapFunc)) {
+						var args = mapFunc;
+						func = args[0];
+						params = params.concat(args.slice(1));
+					}
+
+					func.apply(null, params).then(function(mapped) {
 						results[i] = mapped;
 
 						if(!--toResolve) {
