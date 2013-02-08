@@ -382,15 +382,9 @@ define(function () {
 						func = args.shift();
 
 					onFulfilled = function (results) {
-						var deferred = defer();
-
 						args.push(results);
 
-						func.apply(func, args).then(function (results) {
-							deferred.resolve(results);
-						});
-						
-						return deferred.promise;
+						return func.apply(func, args);
 					};
 				}
 
