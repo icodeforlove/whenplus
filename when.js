@@ -274,6 +274,17 @@ define(function () {
 	function fulfilled(value) {
 		var p = new Promise(function(onFulfilled) {
 			// TODO: Promises/A+ check typeof onFulfilled
+			if (Array.isArray(onFulfilled)) {
+				var args = onFulfilled,
+					func = args.shift();
+
+				onFulfilled = function (results) {
+					args.push(results);
+
+					return func.apply(func, args);
+				};
+			}
+			
 			try {
 				return resolve(onFulfilled ? onFulfilled(value) : value);
 			} catch(e) {
