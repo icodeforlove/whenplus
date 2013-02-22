@@ -126,6 +126,10 @@ define(function () {
 	 */
 	function Promise(then) {
 		this.then = then;
+		// onRejected will be called if onFulfilled fails
+		this.done = function (promiseOrValue, onFulfilled, onRejected) {
+			then(promiseOrValue, onFulfilled, onRejected, true);
+		};
 	}
 
 	Promise.prototype = {
@@ -288,7 +292,11 @@ define(function () {
 			try {
 				return resolve(onFulfilled ? onFulfilled(value) : value);
 			} catch(e) {
-				return rejected(e);
+				if (onFulfilled.onRejected) {
+					return rejected(onFulfilled.onRejected(e));
+				} else {
+					return rejected(e);
+				}
 			}
 		});
 
@@ -369,7 +377,7 @@ define(function () {
 		 * @param {function?} [onRejected] rejection handler
 		 * @param {function?} [onProgress] progress handler
 		 */
-		_then = function(onFulfilled, onRejected, onProgress) {
+		_then = function(onFulfilled, onRejected, onProgress, done) {
 			// TODO: Promises/A+ check typeof onFulfilled, onRejected, onProgress
 			var deferred, progressHandler;
 
@@ -397,6 +405,10 @@ define(function () {
 
 						return func.apply(func, args);
 					};
+				}
+				
+				if (done) {
+					onFulfilled.onRejected = onRejected;
 				}
 
 				promise.then(onFulfilled, onRejected)
@@ -452,9 +464,9 @@ define(function () {
 		 * @param {function?} [onProgress] progress handler
 		 * @return {Promise} new promise
 		 */
-		function then(onFulfilled, onRejected, onProgress) {
+		function then(onFulfilled, onRejected, onProgress, done) {
 			// TODO: Promises/A+ check typeof onFulfilled, onRejected, onProgress
-			return _then(onFulfilled, onRejected, onProgress);
+			return _then(onFulfilled, onRejected, onProgress, done);
 		}
 
 		/**
@@ -692,7 +704,7 @@ define(function () {
 		array = array.map(function (item) {
 			return function () {
 				return task(item);
-			}
+			};
 		});
 
 		return {
