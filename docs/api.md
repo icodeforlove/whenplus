@@ -18,7 +18,7 @@ API
 	* [when.all](#whenall)
 	* [when.map](#whenmap)
 	* [when.reduce](#whenreduce)
-	* [when.mapUnfulfilled](#mapUnfulfilled)
+	* [when.mapUnfulfilled](#whenmapunfulfilled)
 1. [Competitive races](#competitive-races)
 	* [when.any](#whenany)
 	* [when.some](#whensome)
