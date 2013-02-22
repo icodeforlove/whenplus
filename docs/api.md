@@ -18,6 +18,7 @@ API
 	* [when.all](#whenall)
 	* [when.map](#whenmap)
 	* [when.reduce](#whenreduce)
+	* [when.mapUnfulfilled](#mapUnfulfilled)
 1. [Competitive races](#competitive-races)
 	* [when.any](#whenany)
 	* [when.some](#whensome)
@@ -69,6 +70,9 @@ when(promiseOrValue, onFulfilled, onRejected, onProgress)
 // All parameters except the first are optional
 // For example, you can register only an onFulfilled handler
 when(promiseOrValue, onFulfilled);
+
+// binding arguments to function that returns promise
+when([promiseOrValue, arg1, arg2...], onFulfilled);
 ```
 
 `when()` can observe any promise that provides a *thenable* promise--any object that provides a `.then()` method, even promises that aren't fully Promises/A compliant, such as jQuery's Deferred.  It will assimilate such promises and make them behave like Promises/A.
@@ -316,6 +320,12 @@ when(doSomething(),
 );
 ```
 
+you can use the done method to ensure that the error callback gets called even if an error is thrown in a success handler
+
+```js
+doSomething().done(handleSuccess, handleError)
+```
+
 ## when.isPromise()
 
 ```js
@@ -391,6 +401,23 @@ mapFunc(item)
 Where:
 
 * `item` is a fully resolved value of a promise or value in `promisesOrValues`
+
+## when.mapUnfulfilled()
+
+returns an array of unfulfilled mapped promises, the main usecase for this at the moment is allLimit
+
+```js
+var concurrency = 1;
+var promise = when.mapUnfulfilled(array, mapFunc).allLimit(concurrency);
+```
+
+allLimit allows you to limit the amount of promises that get ran concurrently
+
+you can also map args to the mapFunction like this
+
+```js
+when.mapUnfulfilled(array, [mapFunc, arg1, arg2..]);
+```
 
 ## when.reduce()
 
