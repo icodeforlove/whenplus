@@ -215,25 +215,27 @@ define(function () {
 			responses = new Array(promises.length);
 
 		function next () {
-			if (completed === promises.length) {
-				if (errorObject) {
-					deferred.reject(errorObject);
+			process.nextTick(function () {
+				if (completed === promises.length) {
+					if (errorObject) {
+						deferred.reject(errorObject);
+					} else {
+						deferred.resolve();
+					}
 				} else {
-					deferred.resolve();
+					var call = promises[index];
+					if (call) {
+						call().then((function (index) {
+							return function (data) {
+								responses[index] = data;
+								completed++;
+								next();
+							};
+						})(index), errorCatcher);
+						index++;
+					}
 				}
-			} else {
-				var call = promises[index];
-				if (call) {
-					call().then((function (index) {
-						return function (data) {
-							responses[index] = data;
-							completed++;
-							next();
-						};
-					})(index), errorCatcher);
-					index++;
-				}
-			}
+			});
 		}
 
 		function errorCatcher (message) {
@@ -241,7 +243,7 @@ define(function () {
 			errorObject = message;
 			next();
 		}
-		
+
 		deferred.promise.then(
 			function () {
 				if (success) {
@@ -288,7 +290,7 @@ define(function () {
 					return func.apply(func, args);
 				};
 			}
-			
+
 			try {
 				return resolve(onFulfilled ? onFulfilled(value) : value);
 			} catch(e) {
@@ -406,7 +408,7 @@ define(function () {
 						return func.apply(func, args);
 					};
 				}
-				
+
 				if (done) {
 					onFulfilled.onRejected = onRejected;
 				}
