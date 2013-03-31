@@ -699,13 +699,21 @@ define(function () {
 	 * maps array to a unfulfilled promise
 	 *
 	 * @param {Array} items
-	 * @param {Function} method that returns a unfulfilled promise
+	 * @param {Function/Array} method that returns a unfulfilled promise or a method arg set
 	 * @return {Array} unfulfilled promises
 	 */
 	function mapUnfulfilled (array, task) {
+        var args = [];
+        
+        // check if we have aditional arguments
+        if (Array.isArray(task)) {
+            args = args.concat(task.slice(1));
+            task = task[0];
+        }
+        
 		array = array.map(function (item) {
 			return function () {
-				return task(item);
+				return task.apply(null, [item].concat(args));
 			};
 		});
 
